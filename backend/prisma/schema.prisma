@@ -1,0 +1,134 @@
+// StageFlow - Database Schema
+// This is your Prisma schema file for multi-tenant church service scheduling
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Multi-tenant Organization model
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  subdomain String   @unique
+  logoUrl   String?
+  colorScheme String @default("#392F60") // StageFlow brand color
+  
+  // Subscription info
+  subscriptionTier String @default("TRIAL") // TRIAL, CORE, PRO, MEGA
+  trialEndsAt     DateTime?
+  subscriptionStatus String @default("ACTIVE") // ACTIVE, CANCELLED, EXPIRED
+  stripeCustomerId String? @unique
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  users     User[]
+  services  Service[]
+  schedules Schedule[]
+  
+  @@index([subdomain])
+}
+
+// User model with OAuth support
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String?  // Null for OAuth users
+  
+  // OAuth fields
+  googleId    String? @unique
+  microsoftId String? @unique
+  
+  role      String   @default("MEMBER") // ADMIN, EDITOR, MEMBER
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  createdSchedules Schedule[]
+  
+  @@index([tenantId])
+  @@index([email])
+}
+
+// Service template (e.g., "Sunday Morning", "Wednesday Night")
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  dayOfWeek   Int      // 0-6 (Sunday = 0)
+  startTime   String   // "10:00 AM"
+  isActive    Boolean  @default(true)
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  schedules   Schedule[]
+  
+  @@index([tenantId])
+}
+
+// Individual service schedule/plan
+model Schedule {
+  id          String   @id @default(cuid())
+  serviceDate DateTime
+  notes       String?
+  
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  items       ScheduleItem[]
+  
+  @@index([tenantId])
+  @@index([serviceDate])
+  @@index([serviceId])
+}
+
+// Items within a schedule (songs, readings, etc.)
+model ScheduleItem {
+  id          String   @id @default(cuid())
+  order       Int
+  type        String   // SONG, HYMN, READING, PRAYER, SERMON, OTHER
+  title       String
+  duration    Int?     // Duration in minutes
+  notes       String?
+  
+  // Song-specific fields
+  artist      String?
+  itunesId    String?
+  
+  // Person/group responsible
+  assignedTo  String?
+  
+  scheduleId  String
+  schedule    Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([scheduleId])
+  @@index([order])
+}
