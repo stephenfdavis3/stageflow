@@ -4,6 +4,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import 'express-async-errors';
+import authRoutes from './routes/auth';
+
 
 const app: Application = express();
 
@@ -48,7 +50,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // API Routes (will be added)
-// app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 // app.use('/api/users', userRoutes);
 // app.use('/api/services', serviceRoutes);
 // app.use('/api/schedules', scheduleRoutes);
