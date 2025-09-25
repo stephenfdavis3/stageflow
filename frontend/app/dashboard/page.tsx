@@ -228,9 +228,20 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-600 mb-4">
                   Create a new service schedule with songs, readings, and timing.
                 </p>
-                <button className="bg-[#392F60] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#2d2448] transition-colors">
-                  Create Service
-                </button>
+                <button 
+				  onClick={() => router.push('/services/new')}
+				  className="bg-[#392F60] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#2d2448] transition-colors"
+				  >
+				  Create Service
+				</button>
+
+				# Also update the "Service Library" button to go to services list:
+				<button 
+				  onClick={() => router.push('/services')}
+				  className="bg-[#392F60] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#2d2448] transition-colors"
+				>
+				  Manage Services
+				</button>
               </div>
             </div>
 
